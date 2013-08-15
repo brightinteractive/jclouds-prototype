@@ -12,4 +12,6 @@ Prerequisites
 Building and Running
 --------------------
 
-    mvn test
+Substitute a Rackspace Cloud UK username and API key in the command below:
+
+    mvn -Dcom.brightinteractive.jclouds.rscloud.identity=<username> -Dcom.brightinteractive.jclouds.rscloud.credential=<api key> test
