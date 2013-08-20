@@ -8,51 +8,33 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.UUID;
 
-import org.apache.commons.io.IOUtils;
-import org.jclouds.ContextBuilder;
 import org.jclouds.blobstore.BlobStore;
 import org.jclouds.blobstore.BlobStoreContext;
 import org.jclouds.blobstore.domain.Blob;
-import org.jclouds.rackspace.cloudfiles.CloudFilesUKProviderMetadata;
 import org.junit.Test;
 
-public class PutGetDeleteTest
+public class PutGetDeleteTest extends TempContainerTest
 {
     @Test
     public void putGetDelete() throws IOException
     {
-        CloudFilesUKProviderMetadata providerMetadata = CloudFilesUKProviderMetadata.builder().build();
-        final String identity = RackspaceCloudUkCredentials.getIdentity();
-        final String credential = RackspaceCloudUkCredentials.getCredential();
-        BlobStoreContext context = ContextBuilder.newBuilder(providerMetadata).credentials(identity, credential)
-                 .buildView(BlobStoreContext.class);
+        BlobStoreContext context = TestUtil.createBlobStoreContext();
         try
         {
             BlobStore blobStore = context.getBlobStore();
-            final String container = RackspaceCloudUkCredentials.getTestContainerName();
-            ensureContainerExists(blobStore, container);
-            String blobName = randomBlobName();
+            String blobName = TestUtil.randomBlobName();
 
             putBlob(blobStore, container, blobName);
 
-            final InputStream gotData = blobStore.getBlob(container, blobName).getPayload().getInput();
+            final InputStream data = getClass().getResourceAsStream("small.txt");
             try
             {
-                final InputStream data = getClass().getResourceAsStream("small.txt");
-                try
-                {
-                    assertTrue(IOUtils.contentEquals(data, gotData));
-                }
-                finally
-                {
-                    data.close();
-                }
+                assertBlobContentEquals(blobStore, blobName, data);
             }
             finally
             {
-                gotData.close();
+                data.close();
             }
 
             assertTrue(blobStore.blobExists(container, blobName));
@@ -70,7 +52,6 @@ public class PutGetDeleteTest
         final InputStream data = getClass().getResourceAsStream("small.txt");
         try
         {
-
             Blob blob = blobStore
                 .blobBuilder(blobName)
                 .payload(data)
@@ -81,19 +62,6 @@ public class PutGetDeleteTest
         finally
         {
             data.close();
-        }
-    }
-
-    private String randomBlobName()
-    {
-        return UUID.randomUUID().toString();
-    }
-
-    private static void ensureContainerExists(BlobStore blobStore, String container)
-    {
-        if (!blobStore.containerExists(container))
-        {
-            blobStore.createContainerInLocation(null, container);
         }
     }
 }
