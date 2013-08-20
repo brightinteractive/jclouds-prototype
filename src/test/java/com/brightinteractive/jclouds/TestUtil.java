@@ -34,10 +34,15 @@ public class TestUtil
 
     public static BlobStoreContext createBlobStoreContext()
     {
+        return startBuildingWithCredentials()
+            .buildView(BlobStoreContext.class);
+    }
+
+    public static ContextBuilder startBuildingWithCredentials()
+    {
         CloudFilesUKProviderMetadata providerMetadata = CloudFilesUKProviderMetadata.builder().build();
         final String identity = RackspaceCloudUkCredentials.getIdentity();
         final String credential = RackspaceCloudUkCredentials.getCredential();
-        return ContextBuilder.newBuilder(providerMetadata).credentials(identity, credential)
-                 .buildView(BlobStoreContext.class);
+        return ContextBuilder.newBuilder(providerMetadata).credentials(identity, credential);
     }
 }
