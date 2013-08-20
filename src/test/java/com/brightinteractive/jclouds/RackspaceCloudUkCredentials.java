@@ -15,9 +15,4 @@ public class RackspaceCloudUkCredentials
     {
         return System.getProperty("com.brightinteractive.jclouds.rscloud.credential");
     }
-
-    public static String getTestContainerName()
-    {
-        return "auto-test";
-    }
 }

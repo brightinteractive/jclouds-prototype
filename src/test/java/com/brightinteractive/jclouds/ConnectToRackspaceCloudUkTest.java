@@ -10,7 +10,7 @@ import org.jclouds.blobstore.BlobStoreContext;
 import org.jclouds.rackspace.cloudfiles.CloudFilesUKProviderMetadata;
 import org.junit.Test;
 
-public class ConnectToRackspaceCloudUkTest
+public class ConnectToRackspaceCloudUkTest extends TempContainerTest
 {
     @Test
     public void connectToRackspaceCloudUk()
@@ -23,7 +23,6 @@ public class ConnectToRackspaceCloudUkTest
         try
         {
             BlobStore blobStore = context.getBlobStore();
-            final String container = RackspaceCloudUkCredentials.getTestContainerName();
             blobStore.countBlobs(container);
         }
         finally
