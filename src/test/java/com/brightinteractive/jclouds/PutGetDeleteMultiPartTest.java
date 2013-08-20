@@ -8,8 +8,12 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Properties;
 
+import com.brightinteractive.common.lang.ClassUtil;
+import org.apache.log4j.Logger;
 import org.jclouds.blobstore.BlobStore;
 import org.jclouds.blobstore.BlobStoreContext;
 import org.jclouds.blobstore.domain.Blob;
@@ -21,16 +25,22 @@ import org.junit.Test;
 
 public class PutGetDeleteMultiPartTest extends TempContainerTest
 {
+    private static final Logger log = Logger.getLogger(ClassUtil.currentClassName());
+
     /**
 	 * Use the minimum part size to minimise the file size that we have to upload to get a given number of chunks and
 	 * thereby make the test run faster
 	 */
     private static final long PART_SIZE = MultipartUpload.MIN_PART_SIZE;
 
-    /**
-     * Long enough for 3 parts.
-     */
-    private static final long BLOB_LENGTH = (PART_SIZE * 2) + 1;
+    private static final String TEST_FILE = "boring.dat";
+
+    private final long testFileLength;
+
+    public PutGetDeleteMultiPartTest() throws IOException
+    {
+        testFileLength = testFileLength();
+    }
 
     @Test
     public void putGetDelete() throws IOException
@@ -54,10 +64,11 @@ public class PutGetDeleteMultiPartTest extends TempContainerTest
 
             putMultiPartBlob(blobStore, container, blobName);
 
-            assertTrue("There should be more than one blob in the container because it should have been split up into parts",
+            assertTrue("There should be more than one blob in the container because it should have been split up into " +
+                       numPartsExpected() + " parts",
                        blobStore.countBlobs(container) > 1);
 
-            final InputStream data = createStream();
+            final InputStream data = openTestFile();
             try
             {
                 assertBlobContentEquals(blobStore, blobName, data);
@@ -80,18 +91,38 @@ public class PutGetDeleteMultiPartTest extends TempContainerTest
         }
     }
 
-    private InputStream createStream()
+    private long numPartsExpected() throws IOException
     {
-        return new PseudoRandomInputStream(BLOB_LENGTH, 68030);
+        long contentLength = testFileLength;
+        long parts = contentLength / PART_SIZE;
+        if (parts * PART_SIZE < contentLength)
+        {
+            parts += 1;
+        }
+        return parts;
+    }
+
+    private InputStream openTestFile()
+    {
+        return getClass().getResourceAsStream(TEST_FILE);
+    }
+
+    private long testFileLength() throws IOException
+    {
+        final URL testFileUrl = getClass().getResource(TEST_FILE);
+        URLConnection conn = testFileUrl.openConnection();
+        final long contentLength = conn.getContentLengthLong();
+        log.debug("Content length: " + contentLength);
+        return contentLength;
     }
 
     private void putMultiPartBlob(BlobStore blobStore, String container, String blobName) throws IOException
     {
-        final InputStream data = createStream();
+        final InputStream data = openTestFile();
         try
         {
             Payload payload = new InputStreamPayload(data);
-            payload.getContentMetadata().setContentLength(BLOB_LENGTH);
+            payload.getContentMetadata().setContentLength(testFileLength);
 
             Blob blob = blobStore
                 .blobBuilder(blobName)
