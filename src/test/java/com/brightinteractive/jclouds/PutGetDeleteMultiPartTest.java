@@ -6,10 +6,11 @@ package com.brightinteractive.jclouds;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.URISyntaxException;
 import java.util.Properties;
 
 import com.brightinteractive.common.lang.ClassUtil;
@@ -18,8 +19,6 @@ import org.jclouds.blobstore.BlobStore;
 import org.jclouds.blobstore.BlobStoreContext;
 import org.jclouds.blobstore.domain.Blob;
 import org.jclouds.blobstore.options.PutOptions;
-import org.jclouds.io.Payload;
-import org.jclouds.io.payloads.InputStreamPayload;
 import org.jclouds.openstack.swift.blobstore.strategy.MultipartUpload;
 import org.junit.Test;
 
@@ -37,13 +36,13 @@ public class PutGetDeleteMultiPartTest extends TempContainerTest
 
     private final long testFileLength;
 
-    public PutGetDeleteMultiPartTest() throws IOException
+    public PutGetDeleteMultiPartTest() throws IOException, URISyntaxException
     {
         testFileLength = testFileLength();
     }
 
     @Test
-    public void putGetDelete() throws IOException
+    public void putGetDelete() throws IOException, URISyntaxException
     {
         Properties overrides = new Properties();
         // This property controls the number of parts being uploaded in parallel, the default is 4
@@ -68,7 +67,7 @@ public class PutGetDeleteMultiPartTest extends TempContainerTest
                        numPartsExpected() + " parts",
                        blobStore.countBlobs(container) > 1);
 
-            final InputStream data = openTestFile();
+            final InputStream data = new FileInputStream(testFile());
             try
             {
                 assertBlobContentEquals(blobStore, blobName, data);
@@ -102,38 +101,26 @@ public class PutGetDeleteMultiPartTest extends TempContainerTest
         return parts;
     }
 
-    private InputStream openTestFile()
+    private long testFileLength() throws IOException, URISyntaxException
     {
-        return getClass().getResourceAsStream(TEST_FILE);
-    }
-
-    private long testFileLength() throws IOException
-    {
-        final URL testFileUrl = getClass().getResource(TEST_FILE);
-        URLConnection conn = testFileUrl.openConnection();
-        final long contentLength = conn.getContentLengthLong();
+        final long contentLength = testFile().length();
         log.debug("Content length: " + contentLength);
         return contentLength;
     }
 
-    private void putMultiPartBlob(BlobStore blobStore, String container, String blobName) throws IOException
+    private File testFile() throws URISyntaxException
     {
-        final InputStream data = openTestFile();
-        try
-        {
-            Payload payload = new InputStreamPayload(data);
-            payload.getContentMetadata().setContentLength(testFileLength);
+        // won't work if we're running from a jar :-(
+        return new File(getClass().getResource(TEST_FILE).toURI());
+    }
 
-            Blob blob = blobStore
-                .blobBuilder(blobName)
-                .payload(payload)
-                .build();
+    private void putMultiPartBlob(BlobStore blobStore, String container, String blobName) throws IOException, URISyntaxException
+    {
+        Blob blob = blobStore
+            .blobBuilder(blobName)
+            .payload(testFile())
+            .build();
 
-            blobStore.putBlob(container, blob, PutOptions.Builder.multipart());
-        }
-        finally
-        {
-            data.close();
-        }
+        blobStore.putBlob(container, blob, PutOptions.Builder.multipart());
     }
 }
