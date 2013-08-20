@@ -16,14 +16,14 @@ public class ConnectToRackspaceCloudUkTest
     public void connectToRackspaceCloudUk()
     {
         CloudFilesUKProviderMetadata providerMetadata = CloudFilesUKProviderMetadata.builder().build();
-        final String identity = System.getProperty("com.brightinteractive.jclouds.rscloud.identity");
-        final String credential = System.getProperty("com.brightinteractive.jclouds.rscloud.credential");
+        final String identity = RackspaceCloudUkCredentials.getIdentity();
+        final String credential = RackspaceCloudUkCredentials.getCredential();
         BlobStoreContext context = ContextBuilder.newBuilder(providerMetadata).credentials(identity, credential)
                  .buildView(BlobStoreContext.class);
         try
         {
             BlobStore blobStore = context.getBlobStore();
-            final String container = "auto-test";
+            final String container = RackspaceCloudUkCredentials.getTestContainerName();
             blobStore.countBlobs(container);
         }
         finally
