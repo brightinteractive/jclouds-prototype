@@ -1,0 +1,4 @@
+#!/bin/sh
+USERNAME="$1"
+API_KEY="$2"
+curl -v -X GET https://identity.api.rackspacecloud.com/v1.0 -H "X-Auth-User: $USERNAME" -H "X-Auth-Key: $API_KEY" 2>&1 | grep X-Auth-Token
